@@ -1,0 +1,246 @@
+
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geolocation — визначення місцезнаходження</title>
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        header {
+            padding: 25px 15px;
+            text-align: center;
+            color: white;
+            background: #2563eb;
+        }
+
+        header h1 {
+            margin: 0 0 10px;
+        }
+
+        header p {
+            margin: 0;
+        }
+
+        main {
+            width: min(1100px, 94%);
+            margin: 25px auto;
+        }
+
+        section {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 3px 12px #00000010;
+        }
+
+        h2 {
+            margin-top: 0;
+            color: #1d4ed8;
+        }
+
+        .buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+        }
+
+        button {
+            padding: 11px 16px;
+            border: none;
+            border-radius: 7px;
+            background: #2563eb;
+            color: white;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #clearWatchButton {
+            background: #dc2626;
+        }
+
+        #clearWatchButton:hover {
+            background: #b91c1c;
+        }
+
+        .info {
+            padding: 12px;
+            margin: 10px 0;
+            border-radius: 7px;
+            background: #eff6ff;
+            overflow-wrap: anywhere;
+        }
+
+        #status {
+            font-weight: bold;
+        }
+
+        #map {
+            width: 100%;
+            height: 450px;
+            border-radius: 9px;
+            z-index: 1;
+        }
+
+        .destination-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 12px 0;
+        }
+
+        input {
+            flex: 1 1 180px;
+            min-width: 0;
+            padding: 11px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font-size: 15px;
+        }
+
+        #history {
+            padding-left: 22px;
+        }
+
+        #history li {
+            margin-bottom: 10px;
+            overflow-wrap: anywhere;
+        }
+
+        footer {
+            padding: 20px;
+            text-align: center;
+            color: #64748b;
+        }
+
+        @media (max-width: 600px) {
+            #map {
+                height: 350px;
+            }
+
+            section {
+                padding: 15px;
+            }
+
+            header h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Моє місцезнаходження</h1>
+    <p>Практична робота з Geolocation API та Leaflet</p>
+</header>
+
+<main>
+    <section>
+        <h2>1. Визначення координат</h2>
+
+        <p>
+            Натисніть кнопку, щоб визначити поточне місцезнаходження.
+            Браузер попросить надати дозвіл на доступ до геолокації.
+        </p>
+
+        <div class="buttons">
+            <button id="getLocationButton">Визначити місцезнаходження</button>
+            <button id="watchButton">Watch position</button>
+            <button id="clearWatchButton" disabled>Зупинити відстеження</button>
+        </div>
+
+        <div class="info">
+            <p id="status">Очікування визначення місцезнаходження.</p>
+            <p id="latitude">Широта: —</p>
+            <p id="longitude">Довгота: —</p>
+            <p id="accuracy">Точність: —</p>
+            <p id="distance">Відстань до коледжу: —</p>
+            <p id="updatedAt">Час оновлення: —</p>
+        </div>
+    </section>
+
+    <section>
+        <h2>2. Інтерактивна карта</h2>
+        <p>
+            На карті відображаються ваше місцезнаходження,
+            історія оновлень і вибраний пункт призначення.
+        </p>
+        <div id="map"></div>
+    </section>
+
+    <section>
+        <h2>3. Пункт призначення</h2>
+
+        <p>Введіть географічні координати точки, до якої потрібно перейти на карті.</p>
+
+        <div class="destination-fields">
+            <input
+                type="number"
+                id="destinationLatitude"
+                placeholder="Широта, наприклад 48.922"
+                step="any"
+                min="-90"
+                max="90"
+            >
+
+            <input
+                type="number"
+                id="destinationLongitude"
+                placeholder="Довгота, наприклад 24.713"
+                step="any"
+                min="-180"
+                max="180"
+            >
+        </div>
+
+        <button id="destinationButton">Показати пункт призначення</button>
+
+        <p id="destinationStatus" class="info">
+            Координати пункту призначення не введені.
+        </p>
+    </section>
+
+    <section>
+        <h2>4. Історія місцезнаходжень</h2>
+        <p>Список отриманих координат і часу їх визначення.</p>
+        <ol id="history"></ol>
+    </section>
+</main>
+
+<footer>
+    Практична робота. Робота з API-інтерфейсом Geolocation
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="myLoc.js"></script>
+
+</body>
+</html>
